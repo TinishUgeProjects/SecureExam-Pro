@@ -1,0 +1,97 @@
+{% extends 'student/studentbase.html' %}
+{% block content %}
+{%load static%}
+
+<head>
+  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+  <!-- <script src="{% static 'FunctionsDisabled.js' %}"></script> -->
+  <!-- <script>
+    function requestPermissions() {
+      const enterExamButton = document.getElementById("enter-exam-button");
+      enterExamButton.classList.add("disabled-button");
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        Promise.all([
+          navigator.permissions.query({ name: 'camera' }),
+          navigator.permissions.query({ name: 'microphone' })
+        ]).then((permissionResults) => {
+          const cameraState = permissionResults[0].state;
+          const microphoneState = permissionResults[1].state;
+
+          if (cameraState === 'prompt' || microphoneState === 'prompt') {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+              .then(() => {
+                enterExamButton.classList.remove("disabled-button");
+                alert('Camera and microphone permissions granted!');
+              })
+              .catch(() => {
+                enterExamButton.classList.remove("disabled-button");
+                alert('Camera and microphone permissions denied. Please allow access to proceed.');
+              });
+          } else if (cameraState === 'denied' || microphoneState === 'denied') {
+            enterExamButton.classList.remove("disabled-button");
+            alert('Camera and microphone permissions have been denied. Please update the permission settings in your browser and try again.');
+          } else {
+            enterExamButton.classList.remove("disabled-button");
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+              .then(() => {
+                alert('Camera and microphone permissions granted!');
+              });
+          }
+        });
+      } else {
+        enterExamButton.classList.remove("disabled-button");
+        alert('Your browser does not support accessing camera and microphone. Please try another browser.');
+      }
+    }
+</script> -->
+
+
+
+</head>
+<br><br>
+<div class="container my-4">
+    <div class="jumbotron">
+
+        <div class="row">
+
+            <div class="card border-info mx-4 my-4">
+                <div class="card-body text-default">
+
+                    <h4 class="card-title">Exam Details :</h4>
+                    <p class="card-text">
+                        </p><ul style="list-style:decimal;">
+                            <li>Course : {{course.course_name}}</li>
+                            <li>Total Question : {{total_questions}}</li>
+                            <li>Total Marks : {{total_marks}}</li>
+                        </ul>
+                    <p></p>
+
+
+
+                    <h4 class="card-title">Rules :</h4>
+                    <p class="card-text">
+                        </p><ul style="list-style:decimal;">
+                            <li>All questions are MCQ (multiple choice question)</li>
+                            <li><span class="text-danger">Only one choice is correct among the given.</span></li>
+                            <li>Every question carry different marks.</li>
+                            <li>Try to answer ASAP.</li>
+                            <li>If you PRESS refresh or go back to the previous page, there will be a new question for you and the question you were on will be counted as number of attempts.</li>
+                            <li>Questions are presented randomly.</li>
+                            <li>You will be able to view marks immediately once after you submit the answer.</li>
+                        </ul>
+                    <p></p>
+                    <!-- <button onclick="requestPermissions()" class="btn btn-success" style="border-radius:0px;">Request Permissions</button> -->
+                    <a href="{% url 'start-exam' course.id  %}" class="btn btn-success" onclick="startExam()" id="enter-exam-button" style="border-radius:0px;">Enter Examination</a>
+                </div>  
+                <div class="card-footer">Best Of Luck, Students!</div>  
+            </div>  
+        </div>  
+
+    </div>
+</div>
+
+<br><br><br><br><br><br>
+{% endblock content %}

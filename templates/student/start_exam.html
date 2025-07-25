@@ -1,0 +1,251 @@
+{% extends 'student/studentbase.html' %}
+{% block content %}
+{%load static%}
+
+<head>
+  <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+  <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script>
+    function requestPermissions() {
+      const enterExamButton = document.getElementById("enter-exam-button");
+      // enterExamButton.classList.add("disabled-button");
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        Promise.all([
+          navigator.permissions.query({ name: 'camera' }),
+          navigator.permissions.query({ name: 'microphone' })
+        ]).then((permissionResults) => {
+          const cameraState = permissionResults[0].state;
+          const microphoneState = permissionResults[1].state;
+
+          if (cameraState === 'prompt' || microphoneState === 'prompt') {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+              .then(() => {
+                enterExamButton.classList.remove("disabled-button");
+                alert('Camera and microphone permissions granted!');
+              })
+              .catch(() => {
+                enterExamButton.classList.remove("disabled-button");
+                alert('Camera and microphone permissions denied. Please allow access to proceed.');
+              });
+          } else if (cameraState === 'denied' || microphoneState === 'denied') {
+            // enterExamButton.classList.remove("disabled-button");
+            alert('Camera and microphone permissions have been denied. Please update the permission settings in your browser and try again.');
+          } else {
+            // enterExamButton.classList.remove("disabled-button");
+            navigator.mediaDevices.getUserMedia({ audio: true, video: true })
+              .then(() => {
+                alert('Camera and microphone permissions granted!');
+              });
+          }
+        });
+      } else {
+        // enterExamButton.classList.remove("disabled-button");
+        alert('Your browser does not support accessing camera and microphone. Please try another browser.');
+      }
+    }
+    function startExam() {
+    // Add code to start the exam
+      console.log('Exam started');
+      // Send a request to the server to start capturing video and audio
+      fetch('/start-proctoring')
+          .then(response => {
+              if (!response.ok) {
+                  throw new Error('Failed to start proctoring');
+              }
+              return response.json();
+          })
+          .then(data => {
+              console.log('Proctoring started:', data);
+          })
+          .catch(error => {
+              console.error('Error:', error);
+              alert('Failed to start proctoring');
+        });
+    }
+
+    // Function to end exam
+    function endExam() {
+        // Remove event listeners to enable shortcuts
+        document.removeEventListener("contextmenu", disableShortcuts);
+        document.removeEventListener("keydown", disableShortcuts);
+
+        // Disable end exam button
+        disableEndExamButton();
+
+        // Remove focus out event listener
+        window.removeEventListener("blur", handleFocusOut);
+
+        // Add code to submit the exam form
+        var form = document.getElementById("exam-form");
+        form.submit();
+    }
+    // Function to start exam
+    function startExam() {
+      console.log("Exam started"); // Add this line for debugging
+  
+      // Add event listeners to disable shortcuts
+      document.addEventListener("contextmenu", disableShortcuts); // Disable right-click
+      document.addEventListener("keydown", disableShortcuts); // Disable copy and paste shortcuts
+  
+      // Enable end exam button
+      enableEndExamButton();
+  
+      // Add focus out event listener
+      window.addEventListener("blur", handleFocusOut);
+    }
+  
+    // Function to disable shortcuts
+    function disableShortcuts(event) {
+      // Disable right-click
+      if (event.type === "contextmenu") {
+        showWarning("Right-click is disabled during the exam.");
+        event.preventDefault();
+      }
+
+      // Disable copy, cut, and paste shortcuts
+      if (event.type === "keydown") {
+        if (event.key === "c" && (event.metaKey || event.ctrlKey)) {
+          showWarning("Copy shortcut is disabled during the exam.");
+          event.preventDefault();
+        } else if (event.key === "x" && (event.metaKey || event.ctrlKey)) {
+          showWarning("Cut shortcut is disabled during the exam.");
+          event.preventDefault();
+        } else if (event.key === "v" && (event.metaKey || event.ctrlKey)) {
+          showWarning("Paste shortcut is disabled during the exam.");
+          event.preventDefault();
+        }
+      }
+    }
+    // Function to show warning message
+    function showWarning(message) {
+      alert(message);
+      setTimeout(function() {
+        alert('');
+      }, 1000);
+    }
+  
+    // Function to end exam
+    function endExam() {
+      // Remove event listeners to enable shortcuts
+      document.removeEventListener("contextmenu", disableShortcuts);
+      document.removeEventListener("keydown", disableShortcuts);
+  
+      // Disable end exam button
+      disableEndExamButton();
+  
+      // Remove focus out event listener
+      window.removeEventListener("blur", handleFocusOut);
+    }
+  
+    // Function to enable end exam button
+    function enableEndExamButton() {
+      var endButton = document.getElementById("end-exam-button");
+      if (endButton) {
+        endButton.disabled = false;
+      }
+    }
+  
+    // Function to disable end exam button
+    function disableEndExamButton() {
+      var endButton = document.getElementById("end-exam-button");
+      if (endButton) {
+        endButton.disabled = true;
+      }
+    }
+  
+    // let examTabFocused = true;
+    // window.onblur = function() {
+    //   examTabFocused = false;
+    // }
+    // window.onfocus = function() {
+    //   if (!examTabFocused) {
+    //     showWarning("Switching to another window or tab during the exam is not allowed. This warning will only appear once. Further attempts will terminate the exam.");
+    //     examTabFocused = true;
+    //   }
+    // }
+  </script>
+
+</head>
+
+<body onload="startExam()" oncopy="return false" oncut="return false" oncontextmenu="return false">
+<div class="jumbotron my-4">
+
+  <form id="exam-form" class="form" autocomplete="off" onsubmit="return saveAns()"  action="/student/calculate-marks" method="POST">
+    {% csrf_token %}
+    <h2 style="text-align: center;">Course: {{course.course_name}}</h2>
+    {% for q in questions%}
+    <h3 class="text-danger">{{ forloop.counter }}. {{q.question}}</h3><h4 style="text-align: right;">[{{q.marks}} Marks]</h4>
+    
+        <input type="hidden" name="csrfmiddlewaretoken" value="C24rUotmdHawVQJL3KrqiWxvti8UffOFYUc8TRbZtLt36AVLdP3jbkzUVe3beRAa">
+        
+        
+          <div class="form-check mx-4">
+            <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option1}}" value="Option1">
+            <label class="form-check-label" for="option1">
+              {{q.option1}}
+            </label>
+          </div>
+
+        
+          <div class="form-check mx-4">
+            <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option2}}" value="Option2">
+            <label class="form-check-label" for="option2">
+              {{q.option2}}
+            </label>
+          </div>
+
+        
+          <div class="form-check mx-4">
+            <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option3}}" value="Option3">
+            <label class="form-check-label" for="option3">
+              {{q.option3}}
+            </label>
+          </div>
+
+        
+          <div class="form-check mx-4">
+            <input class="form-check-input" type="radio" name="{{ forloop.counter }}" id="{{q.option4}}" value="Option4">
+            <label class="form-check-label" for="option4">
+              {{q.option4}}
+            </label>
+          </div>
+
+        {% endfor %}
+        <input class="btn btn-success btn-lg" style="border-radius: 0%;"  onclick="endExam()" type="submit" value="Submit Answers">  
+    </form>
+    
+  </div>
+  <button onclick="requestPermissions()" class="btn btn-success" style="border-radius:0px;">Request Permissions</button>
+</body>
+
+<script> 
+    function saveAns(){  
+
+        var ele = document.getElementsByTagName('input'); 
+        for(i = 0; i < ele.length; i++) { 
+          if(ele[i].type === "radio") { 
+                if(ele[i].checked){        
+                  setCookie(ele[i].name,ele[i].value,3)
+                }
+            } 
+        } 
+          
+    }
+    
+    function setCookie(cname, cvalue, exdays) {
+  var d = new Date();
+  d.setTime(d.getTime() + (exdays*24*60*60*1000));
+  var expires = "expires="+ d.toUTCString();
+  document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
+</script> 
+<script>
+  window.addEventListener("blur", handleFocusOut);
+</script>
+
+
+<br><br><br><br><br><br>
+{% endblock content %}
